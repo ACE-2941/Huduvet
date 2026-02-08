@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Siyasi Prototip</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background:#1e1e1e;
+  color:white;
+  text-align:center;
+}
+
+#cityTabs button {
+  padding:8px 16px;
+  margin:5px;
+  cursor:pointer;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns: repeat(6, 60px);
+  gap:4px;
+  justify-content:center;
+  margin-top:20px;
+}
+
+.cell {
+  width:60px;
+  height:60px;
+  background:#333;
+  border:1px solid #555;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  font-size:12px;
+}
+
+.cell:hover {
+  background:#444;
+}
+
+.hq {
+  background:#2e7d32;
+  font-weight:bold;
+}
+
+#partyPanel {
+  margin-top:25px;
+  padding:15px;
+  background:#2a2a2a;
+  border-top:2px solid #555;
+}
+
+.stat {
+  margin:6px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Siyasi Yarış Prototipi</h2>
+
+<div id="cityTabs"></div>
+
+<div id="grid" class="grid"></div>
+
+<div id="partyPanel">
+  <h3>Parti Paneli</h3>
+  <div class="stat">Para: <span id="money">100</span></div>
+  <div class="stat">Toplam Etki: <span id="influence">0</span></div>
+  <div class="stat">Kurulu HQ: <span id="hqCount">0</span></div>
+  <button onclick="toggleBuild()">HQ Yerleştirme Modu</button>
+  <div id="modeText">Mod: Kapalı</div>
+</div>
+
+<script>
+const cities = {
+  "Şehir A": createCity(),
+  "Şehir B": createCity(),
+  "Şehir C": createCity()
+};
+
+function createCity() {
+  return {
+    size: 36,
+    cells: new Array(36).fill(null),
+    influence: 0
+  };
+}
+
+let currentCity = "Şehir A";
+let buildMode = false;
+let money = 100;
+let totalInfluence = 0;
+let hqCount = 0;
+
+const gridDiv = document.getElementById("grid");
+
+function renderTabs() {
+  const tabs = document.getElementById("cityTabs");
+  tabs.innerHTML = "";
+  Object.keys(cities).forEach(name => {
+    const btn = document.createElement("button");
+    btn.textContent = name;
+    btn.onclick = () => {
+      currentCity = name;
+      renderGrid();
+    };
+    tabs.appendChild(btn);
+  });
+}
+
+function renderGrid() {
+  gridDiv.innerHTML = "";
+  const city = cities[currentCity];
+
+  city.cells.forEach((cell, i) => {
+    const div = document.createElement("div");
+    div.className = "cell";
+
+    if (cell === "HQ") {
+      div.classList.add("hq");
+      div.textContent = "HQ";
+    }
+
+    div.onclick = () => placeHQ(i);
+    gridDiv.appendChild(div);
+  });
+}
+
+function toggleBuild() {
+  buildMode = !buildMode;
+  document.getElementById("modeText").innerText =
+    "Mod: " + (buildMode ? "HQ Yerleştirme" : "Kapalı");
+}
+
+function placeHQ(index) {
+  if (!buildMode) return;
+
+  const city = cities[currentCity];
+
+  if (city.cells[index] !== null) return;
+
+  if (money < 20) {
+    alert("Yeterli para yok");
+    return;
+  }
+
+  city.cells[index] = "HQ";
+  money -= 20;
+  hqCount++;
+
+  const gainedInfluence = calculateInfluence(index);
+  city.influence += gainedInfluence;
+  totalInfluence += gainedInfluence;
+
+  updatePanel();
+  renderGrid();
+}
+
+function calculateInfluence(index) {
+  // Basit Rise of Industry benzeri yer etkisi mantığı
+  // Merkeze yakınsa daha fazla etki
+
+  const x = index % 6;
+  const y = Math.floor(index / 6);
+
+  const centerDist = Math.abs(x - 2.5) + Math.abs(y - 2.5);
+
+  const influence = Math.max(3, 12 - centerDist * 2);
+
+  return Math.floor(influence);
+}
+
+function updatePanel() {
+  document.getElementById("money").innerText = money;
+  document.getElementById("influence").innerText = totalInfluence;
+  document.getElementById("hqCount").innerText = hqCount;
+}
+
+renderTabs();
+renderGrid();
+updatePanel();
+</script>
+
+</body>
+</html>
